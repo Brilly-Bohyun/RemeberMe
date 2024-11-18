@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 provider "aws" {
-  alias  = "us-east-1"
+  alias  = "us_east_1"
   region = "us-east-1"
 }
 
@@ -71,15 +71,11 @@ module "s3" {
   policy_file = "${path.module}/templates/s3-policy.json"
 }
 
-###############################################################
-## parameter_store
-###############################################################
-
-module "aws_ssm_parameter" {
+module "parameter_store_s3_bucket_name" {
   source = "./modules/aws_ssm_parameter"
-  name   = "parameter"
+  name   = "/remember-me/s3-bucket-name"
   type   = "String"
-  value  = "value"
+  value  = module.s3.bucket_name
 }
 
 ###############################################################
@@ -93,6 +89,13 @@ module "cloudfront" {
   acm_arn        = module.route53.acm_arn
 }
 
+module "parameter_store_cloudfront_distribution_id" {
+  source = "./modules/aws_ssm_parameter"
+  name   = "/remember-me/cloudfront-distribution-id"
+  type   = "String"
+  value  = module.cloudfront.distribution_id
+}
+
 ###############################################################
 ## route53
 ###############################################################
@@ -102,4 +105,8 @@ module "route53" {
   domain_name        = "*.kkamji.net"
   cdn_domain_name    = module.cloudfront.domain_name
   cdn_hosted_zone_id = module.cloudfront.hosted_zone_id
+
+  providers = {
+    aws = aws.us_east_1
+  }
 }
